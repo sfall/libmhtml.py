@@ -72,7 +72,7 @@ default = {
     'debug': 0,
     'operation': 'get',
     'base64_mime_types': ['image/png', 'image/x-icon'],
-    'qp_mime_types': ['text/css', 'text/javascript'],
+    'qp_mime_types': ['text/css', 'application/javascript'],
     'ignore_mime_types': ['application/rss+xml']
 }
 
@@ -103,11 +103,11 @@ def ext2mime(t):
         return 'image/gif'
     elif 'png' in t:
         return 'image/png'
-    elif 'jpeg' or 'jpg' in t:
+    elif 'jpeg' in t or 'jpg' in t:
         return 'image/jpeg'
     elif 'ico' in t:
         return 'image/x-icon'
-    elif 'bm' or 'bmp' in t:
+    elif 'bm' in t or 'bmp' in t:
         return 'image/bmp'
     else:
         return None
@@ -193,6 +193,10 @@ def get_url(vals, url):
     link_list = list(set(
         (t.get('href', ''), t.get('type', '')) for t in tags if t.get('type')
     ))
+    tags = soup.find_all('script')
+    link_list.extend(set(
+        (t.get('src'), 'application/javascript') for t in tags if t.get('src')
+    ))
 
     # add main MHTML header
     t = time.time()
@@ -225,6 +229,8 @@ def get_url(vals, url):
 
     # add other links
     for link_url, mime_type in link_list:
+        if mime_type in vals['ignore_mime_types']:
+            continue
         # ensure the url is absolute
         link_url = urllib.parse.urljoin(url, link_url)
         # get url file
@@ -238,8 +244,6 @@ def get_url(vals, url):
         elif mime_type in vals['qp_mime_types']:
             # append link as quoted-printable
             out += add_part('quoted-printable', boundary, mime_type, link_url, link_contents)
-        elif mime_type in vals['ignore_mime_types']:
-            continue
         else:
             print("Unknown mime type: \"%s\"" % mime_type)
             sys.exit(-1)
@@ -445,7 +449,7 @@ if __name__ == "__main__":
             print(out)
             print('----Error!')
             sys.exit(-1)
-        outfile = 'reddittest.mht'
+        outfile = 'reddittest2.mht'
         with open(outfile, 'w') as f:
             f.write(out)
 
@@ -485,4 +489,6 @@ if __name__ == "__main__":
             if vals['debug'] > 0:
                 print("output in %s" % filename)
 
-    main(sys.argv)
+    #main(sys.argv)
+    test_get()
+    #test_parse()
